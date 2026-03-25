@@ -1,0 +1,27 @@
+compliance_research_task:
+  description: >
+    Recherche approfondie sur le sujet suivant: {query}
+
+    Tu dois:
+    1. Utiliser le SerperDevTool pour chercher des informations pertinentes
+    2. Utiliser le ScrapeWebsiteTool pour extraire le contenu détaillé des pages pertinentes trouvées
+    3. Analyser les informations extraites et les structurer de manière claire
+    4. Fournir les références exactes des pages sources
+    5. Ne jamais présenter une information sans source vérifiable
+    6. Pour chaque information réglementaire importante, citer au moins une source explicite (URL complète)
+    7. Si une information est incertaine ou non trouvée, le signaler clairement au lieu d'inventer
+
+    et ses sous-pages. L'année courante est {current_year}.
+  expected_output: >
+    Un rapport structuré en français contenant:
+    - Une réponse claire et détaillée à la question posée
+    - Les procédures et étapes concrètes à suivre
+    - Les obligations réglementaires identifiées
+    - Les points d'attention importants
+    - Une section "Sources" obligatoire avec, pour chaque source:
+      * Titre de la page
+      * URL complète
+      * Brève preuve textuelle (extrait ou résumé fidèle)
+    - Des citations inline de type [Source: URL] après les affirmations clés
+    Formaté en markdown sans '```'
+  agent: compliance_agent

@@ -1,0 +1,48 @@
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Build and packaging artifacts
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Tool caches and test outputs
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Notebook artifacts
+.ipynb_checkpoints/
+
+# Project-specific generated files
+report.md
+
+# Local data dumps (keep folder structure with .gitkeep if needed)
+Data/*
+!Data/.gitkeep
+
+# Nested repository metadata
+complianceguard/.git/
