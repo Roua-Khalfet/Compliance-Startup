@@ -13,6 +13,15 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import AzureChatOpenAI
 
+_PDF_NAME_RE = re.compile(r"\b[\w\-]+(?:_[\w\-]+)*\.pdf\b", re.IGNORECASE)
+
+LEGAL_REF_FULL_TITLES: dict[str, str] = {
+    "Loi n° 2018-20": "Loi n° 2018-20 du 17 avril 2018 (Startup Act)",
+    "Décret n° 2018-840": "Décret gouvernemental n° 2018-840 du 11 octobre 2018",
+    "Circulaire BCT n° 2019-01": "Circulaire BCT n° 2019-01 du 30 janvier 2019",
+    "Circulaire BCT n° 2019-02": "Circulaire BCT n° 2019-02 du 30 janvier 2019",
+}
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -78,43 +87,77 @@ def _build_llm() -> AzureChatOpenAI:
     )
 
 
+def _is_legal_ref(value: str) -> bool:
+    text = value.strip()
+    if not text:
+        return False
+    if not re.search(r"\b(Loi|Decret|Décret|Circulaire|Code|Rapport)\b", text, re.IGNORECASE):
+        return False
+    return (
+        "n°" in text
+        or "no " in text.lower()
+        or text.lower().startswith("code")
+        or text.lower().startswith("rapport")
+        or " bct " in f" {text.lower()} "
+    )
+
+
+def _sanitize_answer_text(text: str) -> str:
+    # Supprime toute mention de nom de fichier type *.pdf dans la réponse finale.
+    cleaned = _PDF_NAME_RE.sub("", text)
+    # Normalise les sections en mode console (évite les titres markdown collés).
+    cleaned = cleaned.replace("### Reponse directe", "Reponse directe:")
+    cleaned = cleaned.replace("### Réponse directe", "Reponse directe:")
+    cleaned = cleaned.replace("### Conditions principales", "Conditions principales:")
+    cleaned = cleaned.replace("### Etapes pratiques", "Etapes pratiques:")
+    cleaned = cleaned.replace("### Étapes pratiques", "Etapes pratiques:")
+    cleaned = re.sub(r"\s+Conditions principales:\s*", "\n\nConditions principales:\n", cleaned)
+    cleaned = re.sub(r"\s+Etapes pratiques:\s*", "\n\nEtapes pratiques:\n", cleaned)
+
+    # Développe les références juridiques vers leur forme complète.
+    for short_ref, full_title in LEGAL_REF_FULL_TITLES.items():
+        cleaned = re.sub(rf"\b{re.escape(short_ref)}\b", full_title, cleaned)
+
+    # Évite les citations de numéro seul du type "2018-840".
+    cleaned = re.sub(
+        r"(?<!n°\s)(?<!nº\s)(?<!no\s)\b2018-840\b",
+        "Décret gouvernemental n° 2018-840 du 11 octobre 2018",
+        cleaned,
+    )
+
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r"\n\s+\n", "\n\n", cleaned)
+    return cleaned.strip()
+
+
 def _build_context(docs: Iterable, max_docs: int = 8, max_chars: int = 1200) -> str:
     chunks: list[str] = []
     for i, doc in enumerate(list(docs)[:max_docs], start=1):
-        ref = str(doc.metadata.get("reference", "")) or str(doc.metadata.get("source_file", ""))
-        source = str(doc.metadata.get("retrieval_source", ""))
+        ref = str(doc.metadata.get("reference", "") or "").strip()
         text = (doc.page_content or "").strip().replace("\n", " ")
         text = " ".join(text.split())
+        if not text:
+            continue
         if len(text) > max_chars:
             text = text[:max_chars] + "..."
-        chunks.append(f"[{i}] source={source} ref={ref}\n{text}")
+        if _is_legal_ref(ref):
+            chunks.append(f"[{i}] reference={ref}\n{text}")
+        else:
+            chunks.append(f"[{i}]\n{text}")
     return "\n\n".join(chunks)
 
 
 def _collect_sources(docs: Iterable) -> list[str]:
-    def is_legal_ref(value: str) -> bool:
-        text = value.strip()
-        if not text:
-            return False
-        if not re.search(r"\b(Loi|Decret|Décret|Circulaire|Code|Rapport)\b", text, re.IGNORECASE):
-            return False
-        return (
-            "n°" in text
-            or "no " in text.lower()
-            or text.lower().startswith("code")
-            or text.lower().startswith("rapport")
-            or " bct " in f" {text.lower()} "
-        )
-
     refs: list[str] = []
     for doc in docs:
         ref = str(doc.metadata.get("reference", "")).strip()
         if not ref or ref == "graph":
             continue
-        if not is_legal_ref(ref):
+        if not _is_legal_ref(ref):
             continue
-        if ref not in refs:
-            refs.append(ref)
+        display_ref = LEGAL_REF_FULL_TITLES.get(ref, ref)
+        if display_ref not in refs:
+            refs.append(display_ref)
     return refs
 
 
@@ -130,7 +173,10 @@ def answer_question(question: str, max_docs: int = 8) -> tuple[str, list[str]]:
         "Tu es un assistant juridique tunisien. "
         "Donne une reponse directe, claire et pratique. "
         "Ne parle pas du pipeline, du graphe, des relations techniques, ni du scoring. "
-        "Structure ta reponse en 3 blocs: Reponse directe, Conditions principales, Etapes pratiques. "
+        "Ne cite jamais de noms de fichiers (ex: *.pdf, source_file). "
+        "Si tu cites une source, cite uniquement un intitulé juridique complet (nature + numero + date quand connue), "
+        "jamais un numéro seul comme '2018-840'. "
+        "Structure strictement ta reponse en 3 blocs: Reponse directe, Conditions principales, Etapes pratiques. "
         "Si le contexte est insuffisant, dis-le explicitement."
     )
 
@@ -148,6 +194,7 @@ def answer_question(question: str, max_docs: int = 8) -> tuple[str, list[str]]:
         ]
     )
     answer = (result.content or "").strip() if hasattr(result, "content") else str(result)
+    answer = _sanitize_answer_text(answer)
     return answer, _collect_sources(docs)
 
 

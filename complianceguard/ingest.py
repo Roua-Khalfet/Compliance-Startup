@@ -334,7 +334,9 @@ NEO4J_SETUP_STATEMENTS = [
     "CREATE CONSTRAINT IF NOT EXISTS FOR (n:Decret)     REQUIRE n.reference IS UNIQUE",
     "CREATE CONSTRAINT IF NOT EXISTS FOR (n:Circulaire) REQUIRE n.reference IS UNIQUE",
     "CREATE CONSTRAINT IF NOT EXISTS FOR (n:Document)   REQUIRE n.id IS UNIQUE",
+    "CREATE CONSTRAINT IF NOT EXISTS FOR (n:Article)    REQUIRE n.article_key IS UNIQUE",
     "CREATE INDEX IF NOT EXISTS FOR (n:Article)  ON (n.id)",
+    "CREATE INDEX IF NOT EXISTS FOR (n:Article)  ON (n.article_key)",
     "CREATE INDEX IF NOT EXISTS FOR (n:Chunk)    ON (n.chunk_id)",
     "CREATE INDEX IF NOT EXISTS FOR (n:Avantage) ON (n.id)",
     "CREATE INDEX IF NOT EXISTS FOR (n:Document) ON (n.id)",
@@ -679,6 +681,120 @@ def build_graph_from_docs(docs: list[Document], graph: Neo4jGraph) -> None:
         time.sleep(2)  # throttle entre batches
 
 
+def canonicalize_article_nodes(graph: Neo4jGraph) -> None:
+    """
+    Canonise les noeuds Article pour éviter les collisions inter-documents.
+
+    Règle d'identité:
+      article_key = <reference_document>::article:<numero>
+
+    Puis:
+      - recopie les relations Article vers le noeud canonique,
+            - relabellise les anciens noeuds génériques en :ArticleLegacy,
+            - supprime les noeuds legacy (par défaut) pour nettoyer le graphe.
+    """
+    print("\nNormalisation des noeuds Article (clé canonique par document)...")
+
+    mapping_query = """
+    MATCH (d:Document)-[:MENTIONS]->(a:Article)
+    WITH d, a,
+         trim(coalesce(toString(a.numero), '')) AS a_num,
+         trim(coalesce(toString(d.article_num), '')) AS d_num,
+         trim(coalesce(toString(a.id), '')) AS a_id,
+         trim(coalesce(toString(d.reference), toString(d.source_file), 'Document')) AS doc_ref
+    WITH d, a, doc_ref,
+         CASE
+            WHEN a_num <> '' AND toLower(a_num) <> 'null' THEN a_num
+            WHEN d_num <> '' AND toLower(d_num) <> 'null' AND d_num <> 'para' AND d_num <> 'preambule' THEN d_num
+            WHEN a_id =~ '(?i)^article\\s+.+$' THEN trim(replace(replace(a_id, 'Article', ''), 'article', ''))
+            ELSE ''
+         END AS article_num
+    WHERE article_num <> ''
+    WITH d, a, doc_ref, article_num, doc_ref + '::article:' + article_num AS article_key
+    MERGE (ca:Article {article_key: article_key})
+    SET ca.id = article_key,
+        ca.numero = article_num,
+        ca.reference = doc_ref,
+        ca.source = CASE
+            WHEN coalesce(trim(toString(a.source)), '') IN ['', 'null'] THEN doc_ref
+            ELSE trim(toString(a.source))
+        END,
+        ca.titre_court = CASE
+            WHEN coalesce(trim(toString(a.titre_court)), '') = '' THEN 'Article ' + article_num
+            ELSE trim(toString(a.titre_court))
+        END,
+        a.canonical_article_key = article_key
+    MERGE (d)-[:MENTIONS]->(ca)
+    RETURN count(DISTINCT ca) AS canonical_articles, count(*) AS mapped_mentions
+    """
+
+    rel_types = [
+        "PREVOIT", "CONCERNE", "FIXE", "MODIFIE",
+        "APPLIQUE", "DEPEND_DE", "CONDITIONNE", "REFERENCE",
+    ]
+
+    migrated = 0
+    for rel in rel_types:
+        out_q = f"""
+        MATCH (a:Article)-[:{rel}]->(x)
+        WHERE a.canonical_article_key IS NOT NULL
+        MATCH (ca:Article {{article_key: a.canonical_article_key}})
+        MERGE (ca)-[:{rel}]->(x)
+        RETURN count(*) AS c
+        """
+        in_q = f"""
+        MATCH (x)-[:{rel}]->(a:Article)
+        WHERE a.canonical_article_key IS NOT NULL
+        MATCH (ca:Article {{article_key: a.canonical_article_key}})
+        MERGE (x)-[:{rel}]->(ca)
+        RETURN count(*) AS c
+        """
+        out_rows = graph.query(out_q)
+        in_rows = graph.query(in_q)
+        migrated += int((out_rows[0].get("c", 0) if out_rows else 0) or 0)
+        migrated += int((in_rows[0].get("c", 0) if in_rows else 0) or 0)
+
+    relabel_query = """
+    MATCH (a:Article)
+    WHERE a.canonical_article_key IS NOT NULL
+      AND (a.id =~ '(?i)^Article\\s+.+$' OR coalesce(trim(toString(a.source)), '') IN ['', 'null'])
+    REMOVE a:Article
+    SET a:ArticleLegacy
+    RETURN count(*) AS relabeled
+    """
+
+    delete_legacy_query = """
+    MATCH (a:ArticleLegacy)
+    DETACH DELETE a
+    RETURN count(*) AS deleted
+    """
+
+    map_rows = graph.query(mapping_query)
+    relabel_rows = graph.query(relabel_query)
+
+    keep_legacy = os.getenv("KEEP_ARTICLE_LEGACY", "").strip().lower() in {
+        "1", "true", "yes", "y", "on"
+    }
+    deleted = 0
+    if not keep_legacy:
+        del_rows = graph.query(delete_legacy_query)
+        deleted = int((del_rows[0].get("deleted", 0) if del_rows else 0) or 0)
+
+    canonical_articles = int((map_rows[0].get("canonical_articles", 0) if map_rows else 0) or 0)
+    mapped_mentions = int((map_rows[0].get("mapped_mentions", 0) if map_rows else 0) or 0)
+    relabeled = int((relabel_rows[0].get("relabeled", 0) if relabel_rows else 0) or 0)
+
+    print(
+        "  Articles canonisés : "
+        f"{canonical_articles} | mentions remappées : {mapped_mentions} | "
+        f"relations migrées : {migrated} | anciens noeuds relabellisés : {relabeled}"
+    )
+    if keep_legacy:
+        print("  Legacy conservé (KEEP_ARTICLE_LEGACY=true).")
+    else:
+        print(f"  Legacy supprimé : {deleted}")
+
+
 # ── ÉTAPE 3 : LIENS NEXT ENTRE CHUNKS ────────────────────────────────────────
 
 def add_chunk_links(docs: list[Document], graph: Neo4jGraph) -> None:
@@ -952,6 +1068,7 @@ def run_ingestion() -> None:
     # ── 2. Extraction entités → Neo4j ─────────────────────────────
     print("\n[2/5] Extraction des entités juridiques → Neo4j...")
     build_graph_from_docs(docs, graph)
+    canonicalize_article_nodes(graph)
 
     # ── 3. Liens NEXT entre chunks ────────────────────────────────
     print("\n[3/5] Liens de séquence (NEXT) dans Neo4j...")
