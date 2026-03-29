@@ -1,4 +1,5 @@
 import os
+from complianceguard.config import config, get_azure_llm_kwargs
 import re
 import yaml
 from pathlib import Path
@@ -22,7 +23,7 @@ load_dotenv(_PROJECT_ROOT / ".env")
 # Tool definitions
 # ---------------------------------------------------------------------------
 
-_serper_key = os.getenv("SERPER_API_KEY")
+_serper_key = config.SERPER_API_KEY
 search_wrapper = None
 if _serper_key:
     search_wrapper = GoogleSerperAPIWrapper(serper_api_key=_serper_key, k=10)
@@ -106,38 +107,7 @@ class ComplianceGuardChain:
         )
 
         # LLM — Azure-hosted model via OpenAI-compatible API
-        raw_model = os.getenv("model", "Llama-4-Maverick-17B-128E-Instruct-FP8")
-        model_name = raw_model.replace("azure/", "")
-
-        azure_base = os.getenv("AZURE_API_BASE", "").rstrip("/")
-        azure_key = os.getenv("AZURE_API_KEY", "")
-        azure_api_version = os.getenv("AZURE_API_VERSION", "")
-
-        # Normalize endpoint style
-        if "services.ai.azure.com" in azure_base and not azure_base.endswith("/models"):
-            api_base = f"{azure_base}/models"
-        elif "openai.azure.com" in azure_base:
-            if "/openai/v1" in azure_base:
-                api_base = azure_base
-            elif azure_base.endswith("/openai"):
-                api_base = f"{azure_base}/v1"
-            else:
-                api_base = f"{azure_base}/openai/v1"
-        elif azure_base.endswith("/v1") or azure_base.endswith("/models"):
-            api_base = azure_base
-        else:
-            api_base = f"{azure_base}/v1"
-
-        llm_kwargs = {
-            "model": model_name,
-            "temperature": temperature,
-            "api_key": azure_key,
-            "base_url": api_base,
-        }
-        if azure_api_version:
-            llm_kwargs["default_query"] = {"api-version": azure_api_version}
-
-        self.llm = ChatOpenAI(**llm_kwargs)
+        llm = ChatOpenAI(**get_azure_llm_kwargs())
 
         # Bind tools to the LLM
         self.llm_with_tools = self.llm.bind_tools(_TOOLS)
@@ -181,7 +151,7 @@ class ComplianceGuardChain:
         return "\n".join(lines)
 
     def _search_verified_urls(self, query: str, limit: int = 5) -> list[str]:
-        serper_key = os.getenv("SERPER_API_KEY", "")
+        serper_key = config.SERPER_API_KEY
         if not serper_key:
             return []
 

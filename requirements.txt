@@ -1,6 +1,7 @@
 langchain
 langchain-openai
 langchain-community
+langchain-ollama
 langchain-core
 google-search-results
 beautifulsoup4
@@ -11,6 +12,7 @@ langchain-experimental>=0.0.60
 # Neo4j GraphRAG
 neo4j>=5.14.0
 langchain-neo4j>=0.1.0
+qdrant-client>=1.11.0
  
 # PDF processing
 pypdf>=4.0.0
@@ -22,4 +24,4 @@ tiktoken>=0.7.0
  
 # Utils
 python-dotenv>=1.0.0
-pydantic>=2.0.0
+pydantic>=2.0.0pydantic-settings

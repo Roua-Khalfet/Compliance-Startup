@@ -10,13 +10,13 @@ Utilisation dans main.py :
 """
 
 import os
+from complianceguard.config import get_azure_llm_kwargs
 from dotenv import load_dotenv
-from langchain.tools import Tool, StructuredTool
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.tools import StructuredTool
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
-from langchain.chains import RetrievalQAWithSourcesChain
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.output_parser import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from pydantic import BaseModel, Field
 
 from .retriever import get_hybrid_retriever, get_graph_qa_chain
@@ -25,11 +25,45 @@ load_dotenv()
 
 # ── LLM PRINCIPAL ────────────────────────────────────────────────────────────
 
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0,
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
-)
+def build_azure_chat_llm(temperature: float = 0) -> ChatOpenAI:
+    """Construit un client ChatOpenAI compatible Azure AI / Azure OpenAI."""
+    raw_model = os.getenv("model", "azure/Llama-4-Maverick-17B-128E-Instruct-FP8")
+    model_name = raw_model.replace("azure/", "")
+
+    azure_base = os.getenv("AZURE_API_BASE", "").rstrip("/")
+    azure_key = os.getenv("AZURE_API_KEY", "")
+    azure_api_version = os.getenv("AZURE_API_VERSION", "")
+
+    if not azure_base or not azure_key:
+        raise ValueError("AZURE_API_BASE et AZURE_API_KEY doivent être définis dans .env")
+
+    if "services.ai.azure.com" in azure_base and not azure_base.endswith("/models"):
+        api_base = f"{azure_base}/models"
+    elif "openai.azure.com" in azure_base:
+        if "/openai/v1" in azure_base:
+            api_base = azure_base
+        elif azure_base.endswith("/openai"):
+            api_base = f"{azure_base}/v1"
+        else:
+            api_base = f"{azure_base}/openai/v1"
+    elif azure_base.endswith("/v1") or azure_base.endswith("/models"):
+        api_base = azure_base
+    else:
+        api_base = f"{azure_base}/v1"
+
+    kwargs = {
+        "model": model_name,
+        "temperature": temperature,
+        "api_key": azure_key,
+        "base_url": api_base,
+    }
+    if azure_api_version:
+        kwargs["default_query"] = {"api-version": azure_api_version}
+
+    return ChatOpenAI(**kwargs)
+
+
+llm = build_azure_chat_llm(temperature=0)
 
 # ── PROMPT COMPLIANCEGUARD ────────────────────────────────────────────────────
 

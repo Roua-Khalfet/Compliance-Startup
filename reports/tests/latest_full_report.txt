@@ -1,0 +1,247 @@
+Rapport Questions-Reponses GraphRAG
+
+Question 1:
+Je lance une startup en Tunisie: quels avantages concrets puis-je viser et quelles conditions principales dois-je remplir pour y acceder ?
+
+Reponse:
+**Réponse directe** : En tant que startup en Tunisie, vous pouvez viser l'avantage d'ouvrir un compte spécial en devises qui vous permet de gérer librement vos avoirs en devises pour développer vos activités, notamment pour l'acquisition de biens matériels et immatériels, la création de filiales à l'étranger et l'acquisition de parts dans des sociétés étrangères.
+
+**Conditions principales** : 
+1. Vous devez être une startup conforme aux dispositions du code des changes et du commerce extérieur.
+2. Vous devez remplir les conditions prévues par les points 4 et 5 de l'article 3 de la Circulaire BCT n° 2019-01 pour bénéficier du label Startup.
+3. Vous devez ouvrir le compte spécial en devises auprès d'intermédiaires agréés.
+
+**Étapes pratiques** : 
+1. Vérifiez que votre entreprise répond aux critères pour être considérée comme une startup en Tunisie.
+2. Rassemblez les documents nécessaires pour l'ouverture d'un compte spécial en devises, notamment les documents prouvant les participations des non-résidents au capital de votre startup, les acquisitions d'obligations convertibles en actions, les avances en comptes courants associés, etc.
+3. Contactez un intermédiaire agréé pour ouvrir le compte spécial en devises et suivez les procédures établies par la Banque Centrale de Tunisie.
+4. Assurez-vous de déclarer les informations requises à la Banque Centrale de Tunisie, notamment les états financiers des sociétés établies à l'étranger dans lesquelles vous détenez des participations.
+
+Sources:
+- Loi n° 2018-20
+- Circulaire BCT n° 2019-01
+
+Pipeline GraphRAG:
+- documents recuperes: 14 (min attendu: 4)
+- sources de retrieval: graph:5, graph_path:5, graph_summary:1, vector_qdrant:3
+- relations detectees (test): PREVOIT, CONDITIONNE, CONCERNE, APPLIQUE
+- score relations test: 4/4
+- verdict test: PASS
+
+Question 2:
+Quelles demarches reglementaires dois-je prevoir pour que les avantages du Startup Act soient effectivement applicables a mon dossier ?
+
+Reponse:
+**Réponse directe** : Pour bénéficier des avantages du Startup Act, vous devez obtenir le label Startup en suivant les démarches réglementaires prévues par la loi n° 2018-20 et le décret n° 2018-840.
+
+**Conditions principales** :
+- La société doit avoir été créée il y a moins de 8 ans.
+- Ses ressources humaines, l'ensemble de son actif et son chiffre d'affaires annuel ne doivent pas dépasser les plafonds fixés par décret.
+- Son capital doit être détenu à plus de deux tiers par des personnes physiques ou des organismes d'investissement éligibles.
+- Son modèle économique doit être innovant, notamment technologique.
+- Son activité doit avoir un fort potentiel de croissance économique.
+
+**Étapes pratiques** :
+1. **Vérifiez votre éligibilité** : Assurez-vous que votre entreprise répond aux conditions fixées par l'article 3 de la loi n° 2018-20.
+2. **Préparez les documents nécessaires** : Rassemblez les documents requis tels que l'extrait du registre de commerce, la carte d'identification fiscale, les statuts de la société, le registre des actionnaires, l'attestation d'adhésion à la CNSS, et les états financiers de l'année précédente.
+3. **Déposez votre demande de label** : Soumettez votre demande via le portail électronique des startups, en remplissant le formulaire prévu et en joignant les documents requis.
+4. **Obtenez le label Startup** : Après examen de votre demande, si vous êtes éligible, vous recevrez le label Startup.
+5. **Pour les investisseurs** : Pour bénéficier du privilège stipulé à l'article 13 de la loi, assurez-vous d'être en règle avec l'administration fiscale et les caisses de sécurité sociale, et présentez une copie du label et une attestation de libération du capital lors de votre déclaration d'impôt.
+
+Sources:
+- Décret n° 2018-840
+- Loi n° 2018-20
+
+Pipeline GraphRAG:
+- documents recuperes: 15 (min attendu: 3)
+- sources de retrieval: graph:5, graph_path:5, graph_summary:1, vector_qdrant:4
+- relations detectees (test): APPLIQUE, REFERENCE, PREVOIT
+- score relations test: 3/3
+- verdict test: PASS
+
+Question 3:
+Si deux textes semblent se contredire sur mon eligibilite, comment identifier lequel prime en pratique ?
+
+Reponse:
+**Réponse directe** : Pour identifier le texte qui prime en pratique en cas de contradiction sur votre éligibilité, il faut analyser la hiérarchie des normes juridiques et la spécificité des dispositions.
+
+**Conditions principales** :
+1. Hiérarchie des normes : Les décrets et les lois ont une valeur juridique supérieure aux circulaires.
+2. Spécificité des dispositions : Les textes spécifiques à une situation ou un domaine particulier priment sur les textes généraux.
+
+**Étapes pratiques** :
+1. **Identifier les sources** : Déterminez si les textes contradictoires proviennent de sources ayant la même valeur juridique (loi, décret, circulaire).
+2. **Comparer la hiérarchie** : Si un texte est un décret ou une loi et l'autre une circulaire, le décret ou la loi prime.
+3. **Analyser la spécificité** : Si les deux textes ont la même valeur juridique, identifiez lequel est plus spécifique à votre situation.
+4. **Examiner les dates** : Un texte plus récent peut abroger ou modifier un texte plus ancien.
+5. **Consulter un expert** : Si les contradictions persistent, il est conseillé de consulter un juriste spécialisé dans le domaine concerné.
+
+Dans votre cas, les références [1] et [2] sont issues de la même circulaire (Circulaire BCT n° 2019-01), tandis que [3] et [4] proviennent d'un décret (Décret n° 2018-840). Les décrets ont une valeur juridique supérieure aux circulaires. Par conséquent, en cas de contradiction, les dispositions du Décret n° 2018-840 devraient primer sur celles de la Circulaire BCT n° 2019-01.
+
+Sources:
+- Circulaire BCT n° 2019-01
+- Décret n° 2018-840
+
+Pipeline GraphRAG:
+- documents recuperes: 11 (min attendu: 3)
+- sources de retrieval: graph:5, graph_path:1, graph_summary:1, vector_qdrant:4
+- relations detectees (test): MODIFIE, REFERENCE, CONDITIONNE
+- score relations test: 3/3
+- verdict test: PASS
+
+Question 4:
+Pour planifier ma tresorerie, quelles limites financieres et obligations administratives dois-je anticiper des le depart ?
+
+Reponse:
+**Réponse directe** : Pour planifier votre trésorerie en tant que startup, vous devez anticiper les limites financières et les obligations administratives liées à l'utilisation d'un "compte startup en devise".
+
+**Conditions principales** :
+- Les opérations de débit sur ce compte sont limitées à certaines modalités : virement, chèque bancaire, carte de paiement international, et espèces pour les frais de séjour à l'étranger dans la limite de 30.000 DT par voyage et par bénéficiaire.
+- Vous devez déclarer l'utilisation du compte et les opérations qui y sont liées, sous peine de sanctions pour fausse déclaration.
+- Le compte est soumis à des conditions spécifiques en cas de retrait du label "startup" ou d'expiration de sa durée de validité, notamment la clôture du compte et le traitement de son solde.
+
+**Étapes pratiques** :
+1. **Déterminez les modalités de débit autorisées** : Identifiez les moyens de paiement que vous utiliserez pour les opérations de débit sur votre "compte startup en devise" (virement, chèque, carte de paiement, espèces pour les voyages d'affaires).
+2. **Respectez les limites de retrait en espèces** : N'oubliez pas que les retraits en espèces pour les frais de séjour à l'étranger sont limités à 30.000 DT par voyage et par bénéficiaire.
+3. **Déclarez les opérations avec précision** : Assurez-vous de déclarer correctement toutes les opérations enregistrées sur le "compte startup en devise" pour éviter les sanctions pour fausse déclaration.
+4. **Anticipez la clôture du compte** : En cas de retrait du label "startup" ou d'expiration de sa validité, prévoyez la clôture du compte et décidez si vous souhaitez virer le solde vers un autre compte professionnel en devise ou le céder sur le marché des changes.
+
+Sources:
+- Circulaire BCT n° 2019-01
+- Décret n° 2018-840
+
+Pipeline GraphRAG:
+- documents recuperes: 15 (min attendu: 3)
+- sources de retrieval: graph:5, graph_path:5, graph_summary:1, vector_qdrant:4
+- relations detectees (test): FIXE, CONDITIONNE, CONCERNE
+- score relations test: 3/3
+- verdict test: PASS
+
+Question 5:
+Quelles exigences reviennent le plus souvent, quel que soit l'avantage startup que je demande ?
+
+Reponse:
+**Réponse directe** : Les exigences qui reviennent le plus souvent pour obtenir un avantage en tant que startup concernent principalement l'obtention du label startup et les conditions liées à son maintien.
+
+**Conditions principales** :
+1. Existence de la société ne dépassant pas huit (8) ans.
+2. Modèle économique à forte dimension innovante, notamment technologique.
+3. Activité à fort potentiel de croissance économique.
+4. Capital détenu à plus de deux tiers (2/3) par des personnes physiques ou des organismes d’investissement spécifiques.
+5. Dépôt d'une demande via le portail électronique des startups.
+6. Fourniture de documents spécifiques tels que l'extrait du registre de commerce, les statuts de la société, l'attestation d’adhésion à la CNSS, et les états financiers.
+
+**Étapes pratiques** :
+1. Vérifiez si votre société répond aux conditions principales énoncées ci-dessus.
+2. Préparez les documents nécessaires pour le dépôt de la demande.
+3. Déposez votre demande via le portail électronique des startups.
+4. Assurez-vous de maintenir les conditions requises pour le label startup pendant sa validité.
+
+Sources:
+- Décret n° 2018-840
+- Loi n° 2018-20
+
+Pipeline GraphRAG:
+- documents recuperes: 15 (min attendu: 3)
+- sources de retrieval: graph:5, graph_path:5, graph_summary:1, vector_qdrant:4
+- relations detectees (test): DEPEND_DE, PREVOIT, CONDITIONNE
+- score relations test: 3/3
+- verdict test: PASS
+
+Question 6:
+Je dois ouvrir un compte en devises et utiliser la carte technologique: quelles differences de parcours administratif dois-je prevoir ?
+
+Reponse:
+**Réponse directe** : Pour ouvrir un compte en devises et utiliser une carte technologique, vous devez suivre les procédures établies par la Banque centrale de Tunisie et respecter les conditions prévues par la réglementation en vigueur.
+
+**Conditions principales** :
+- Être une startup conforme à la définition et aux critères fixés par la législation tunisienne.
+- Avoir une comptabilité régulière et conforme aux normes en vigueur.
+- Fournir les documents requis pour l'ouverture du compte, notamment l'extrait du registre de commerce, la carte d'identification fiscale, les statuts de la société, le registre des actionnaires, l'attestation d'adhésion à la CNSS, et les états financiers de l'année précédente.
+- Utiliser les disponibilités du compte en devises en priorité pour les opérations autorisées.
+
+**Étapes pratiques** :
+1. **Vérifiez votre éligibilité** : Assurez-vous que votre entreprise répond aux critères pour être considérée comme une startup et qu'elle est en conformité avec les exigences réglementaires.
+2. **Rassemblez les documents requis** : Préparez les documents nécessaires pour l'ouverture du compte, tels que l'extrait du registre de commerce, la carte d'identification fiscale, etc.
+3. **Choisissez un intermédiaire agréé** : Sélectionnez une banque ou un intermédiaire financier agréé par la Banque centrale de Tunisie pour ouvrir votre compte en devises.
+4. **Ouvrez le compte en devises** : Déposez votre demande d'ouverture de compte en devises auprès de l'intermédiaire agréé choisi, en fournissant les documents requis.
+5. **Demandez une carte technologique** : Une fois le compte ouvert, renseignez-vous sur les possibilités d'obtenir une carte de paiement international liée à ce compte.
+6. **Utilisez le compte conformément à la réglementation** : Effectuez les opérations autorisées en utilisant les disponibilités du compte en devises en priorité, et respectez les règles de fonctionnement fixées par la Banque centrale de Tunisie.
+
+Sources:
+- Circulaire BCT n° 2019-01
+- Loi n° 2018-20
+
+Pipeline GraphRAG:
+- documents recuperes: 15 (min attendu: 3)
+- sources de retrieval: graph:5, graph_path:5, graph_summary:1, vector_qdrant:4
+- relations detectees (test): APPLIQUE, REFERENCE, CONCERNE
+- score relations test: 3/3
+- verdict test: PASS
+
+Question 7:
+Pour obtenir puis conserver le label startup, quelles etapes cles, quels acteurs et quels delais dois-je surveiller ?
+
+Reponse:
+**Réponse directe** : Pour obtenir et conserver le label Startup en Tunisie, il est essentiel de comprendre les conditions requises, les étapes à suivre et les délais à respecter.
+
+**Conditions principales** :
+1. Existence de la société ne dépassant pas 8 ans.
+2. Ressources humaines, total de l'actif et chiffre d’affaires annuel en dessous des plafonds fixés.
+3. Capital détenu à plus de 2/3 par des personnes physiques ou des entités éligibles.
+4. Modèle économique à forte dimension innovante.
+5. Activité à fort potentiel de croissance économique.
+
+**Étapes pratiques** :
+1. **Dépôt de la demande** : Soumettre une demande via le portail électronique des startups avec les documents requis (extrait du registre de commerce, statuts, attestation CNSS, états financiers).
+2. **Pré-label pour les personnes physiques** : Si vous êtes une personne physique souhaitant créer une Startup, vous pouvez demander un pré-label de 6 mois en satisfaisant aux conditions d'innovation et de potentiel de croissance.
+3. **Conservation du label** :
+   - Réaliser les objectifs de croissance fixés.
+   - Tenir une comptabilité conforme à la législation.
+   - Notifier tout changement significatif au ministère chargé de l’économie numérique dans un délai d’un mois.
+4. **Surveillance des délais** :
+   - La validité du label ne peut dépasser 8 ans.
+   - Notification des changements dans un délai d’un mois.
+   - Mise à disposition des états financiers au plus tard le 31 mars de l’année suivant l’exercice concerné.
+
+En suivant ces étapes et en respectant les conditions et les délais impartis, vous pourrez obtenir et conserver le label Startup en Tunisie.
+
+Sources:
+- Loi n° 2018-20
+- Décret n° 2018-840
+
+Pipeline GraphRAG:
+- documents recuperes: 15 (min attendu: 4)
+- sources de retrieval: graph:5, graph_path:5, graph_summary:1, vector_qdrant:4
+- relations detectees (test): CONCERNE, CONDITIONNE, PREVOIT, APPLIQUE
+- score relations test: 4/4
+- verdict test: PASS
+
+Question 8:
+Pour preparer un dossier BCT solide, quels textes dois-je citer et comment ils s'enchainent juridiquement ?
+
+Reponse:
+**Réponse directe** : Pour préparer un dossier BCT solide, il est essentiel de citer les textes juridiques pertinents qui encadrent les startups et les opérations financières en Tunisie. Les principaux textes à considérer sont la Loi n° 2018-20 relative aux startups, le Décret n° 2018-840 fixant les conditions et modalités d'octroi du label startup, ainsi que la Circulaire BCT n° 2019-02 relative aux transferts au titre des opérations courantes.
+
+**Conditions principales** : 
+1. La Loi n° 2018-20 du 17 avril 2018 relative aux startups définit le cadre juridique des startups en Tunisie et fixe les conditions pour bénéficier du label startup et des avantages associés.
+2. Le Décret n° 2018-840 précise les conditions, les procédures et les délais pour l'octroi et le retrait du label startup, ainsi que les avantages et les incitations prévus pour les startups.
+3. La Circulaire BCT n° 2019-02 réglemente les transferts au titre des opérations courantes et fait référence à la Loi n° 2018-20 relative aux startups.
+
+**Étapes pratiques** :
+1. **Étude des textes juridiques** : Commencez par étudier en détail la Loi n° 2018-20, le Décret n° 2018-840, et la Circulaire BCT n° 2019-02 pour comprendre les conditions et les avantages prévus pour les startups.
+2. **Vérification des conditions d'éligibilité** : Vérifiez que votre entreprise remplit les conditions d'éligibilité au label startup telles que définies par la Loi n° 2018-20 et le Décret n° 2018-840.
+3. **Préparation du dossier** : Préparez un dossier complet qui comprend toutes les informations nécessaires pour démontrer l'éligibilité de votre entreprise au label startup et aux avantages associés. Cela peut inclure des informations sur la structure de votre entreprise, son activité, son plan d'affaires, et d'autres documents pertinents.
+4. **Référence aux textes juridiques dans le dossier** : Assurez-vous de référencer les textes juridiques pertinents dans votre dossier, notamment la Loi n° 2018-20 et le Décret n° 2018-840, pour justifier les demandes et les informations fournies.
+5. **Soumission du dossier** : Soumettez votre dossier aux autorités compétentes en suivant les procédures et les délais fixés par le Décret n° 2018-840.
+
+Sources:
+- Décret n° 2018-840
+- Circulaire BCT n° 2019-02
+
+Pipeline GraphRAG:
+- documents recuperes: 15 (min attendu: 2)
+- sources de retrieval: graph:5, graph_path:5, graph_summary:1, vector_qdrant:4
+- relations detectees (test): REFERENCE, APPLIQUE
+- score relations test: 2/2
+- verdict test: PASS
