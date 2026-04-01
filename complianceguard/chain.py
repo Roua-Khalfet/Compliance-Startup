@@ -6,7 +6,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 import requests
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_community.utilities import GoogleSerperAPIWrapper
@@ -107,7 +107,7 @@ class ComplianceGuardChain:
         )
 
         # LLM — Azure-hosted model via OpenAI-compatible API
-        llm = ChatOpenAI(**get_azure_llm_kwargs())
+        self.llm = AzureChatOpenAI(**get_azure_llm_kwargs())
 
         # Bind tools to the LLM
         self.llm_with_tools = self.llm.bind_tools(_TOOLS)

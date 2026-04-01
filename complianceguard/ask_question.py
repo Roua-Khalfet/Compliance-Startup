@@ -12,6 +12,8 @@ import re
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import AzureChatOpenAI
+from langchain_community.utilities import GoogleSerperAPIWrapper
+from langchain_community.document_loaders import WebBaseLoader
 
 _PDF_NAME_RE = re.compile(r"\b[\w\-]+(?:_[\w\-]+)*\.pdf\b", re.IGNORECASE)
 
@@ -161,12 +163,104 @@ def _collect_sources(docs: Iterable) -> list[str]:
     return refs
 
 
-def answer_question(question: str, max_docs: int = 8) -> tuple[str, list[str]]:
+def _is_context_insufficient(context: str, docs: list) -> bool:
+    """Vérifie si le contexte GraphRAG est insuffisant."""
+    if not docs or len(docs) == 0:
+        return True
+    if not context or len(context.strip()) < 100:
+        return True
+    return False
+
+
+def _is_greeting_or_non_question(text: str) -> bool:
+    """Détecte les salutations et messages non-questions."""
+    text_lower = text.lower().strip()
+    
+    greetings = [
+        "bonjour", "bonsoir", "salut", "hello", "hi", "hey",
+        "coucou", "salam", "bsr", "bjr", "cc", "merci", "thanks",
+        "ok", "oui", "non", "d'accord", "super", "bien", "cool"
+    ]
+    
+    # Message trop court (moins de 3 mots)
+    if len(text_lower.split()) < 3:
+        for greeting in greetings:
+            if greeting in text_lower:
+                return True
+        # Vérifier si c'est juste un ou deux mots sans point d'interrogation
+        if "?" not in text and len(text_lower) < 20:
+            return True
+    
+    return False
+
+
+def _web_search(query: str) -> tuple[str, list[str]]:
+    """Recherche web via Serper API."""
+    serper_key = os.getenv("SERPER_API_KEY", "").strip()
+    if not serper_key:
+        return "", []
+    
+    print("[Web] Recherche en cours...")
+    search = GoogleSerperAPIWrapper(serper_api_key=serper_key, k=5)
+    results = search.results(query + " Tunisie startup réglementation")
+    
+    web_context = ""
+    web_sources = []
+    
+    # Extraire les résultats organiques
+    organic = results.get("organic", [])[:3]
+    for item in organic:
+        title = item.get("title", "")
+        snippet = item.get("snippet", "")
+        link = item.get("link", "")
+        web_context += f"[{title}]\n{snippet}\n\n"
+        if link:
+            web_sources.append(link)
+    
+    # Scraper les 2 premières URLs pour plus de contexte
+    for url in web_sources[:2]:
+        try:
+            print(f"[Web] Scraping {url[:50]}...")
+            loader = WebBaseLoader(url)
+            docs = loader.load()
+            content = "\n".join(doc.page_content for doc in docs)
+            content = " ".join(content.split())[:2000]
+            web_context += f"\n[Contenu de {url}]\n{content}\n"
+        except Exception as e:
+            print(f"[Web] Erreur scraping: {e}")
+    
+    return web_context, web_sources
+
+
+def answer_question(question: str, max_docs: int = 8, enable_web_fallback: bool = True) -> tuple[str, list[str]]:
+    # Détecter les salutations et non-questions
+    if _is_greeting_or_non_question(question):
+        return (
+            "Bonjour ! Je suis l'assistant juridique ComplianceGuard, spécialisé dans le Startup Act tunisien.\n\n"
+            "Posez-moi une question juridique, par exemple :\n"
+            "- Quels documents pour obtenir le label startup ?\n"
+            "- Quels sont les avantages fiscaux du Startup Act ?\n"
+            "- Comment obtenir le congé startup ?",
+            []
+        )
+    
     setup_fulltext_index()
     retriever = get_hybrid_retriever()
     docs = retriever.invoke(question)
 
     context = _build_context(docs, max_docs=max_docs)
+    sources = _collect_sources(docs)
+    source_type = "GraphRAG"
+    
+    # Fallback web si contexte insuffisant
+    if enable_web_fallback and _is_context_insufficient(context, docs):
+        print("[GraphRAG] Contexte insuffisant, recherche web en cours...")
+        web_context, web_sources = _web_search(question)
+        if web_context:
+            context = web_context
+            sources = web_sources
+            source_type = "Web"
+    
     llm = _build_llm()
 
     system_prompt = (
@@ -182,7 +276,7 @@ def answer_question(question: str, max_docs: int = 8) -> tuple[str, list[str]]:
 
     human_prompt = (
         f"Question:\n{question}\n\n"
-        "Contexte juridique recupere:\n"
+        f"Contexte juridique recupere ({source_type}):\n"
         f"{context}\n\n"
         "Reponds en francais, de maniere concise et concrete."
     )
@@ -195,7 +289,11 @@ def answer_question(question: str, max_docs: int = 8) -> tuple[str, list[str]]:
     )
     answer = (result.content or "").strip() if hasattr(result, "content") else str(result)
     answer = _sanitize_answer_text(answer)
-    return answer, _collect_sources(docs)
+    
+    if source_type == "Web":
+        answer += f"\n\n[Source: Recherche Web]"
+    
+    return answer, sources
 
 
 def _parse_args() -> argparse.Namespace:
@@ -207,14 +305,20 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Ne pas afficher la liste des sources detectees",
     )
+    parser.add_argument(
+        "--no-web",
+        action="store_true",
+        help="Desactiver le fallback vers la recherche web",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = _parse_args()
+    enable_web = not args.no_web
 
     if args.question.strip():
-        answer, refs = answer_question(args.question.strip(), max_docs=max(1, args.max_docs))
+        answer, refs = answer_question(args.question.strip(), max_docs=max(1, args.max_docs), enable_web_fallback=enable_web)
         print("\n" + "=" * 60)
         print("REPONSE")
         print("=" * 60)
@@ -228,7 +332,7 @@ def main() -> int:
                 print("- (aucune source explicite)\n")
         return 0
 
-    print("Mode interactif. Tapez 'exit' pour quitter.")
+    print("Mode interactif. Tapez 'exit' pour quitter. (Web fallback: " + ("ON" if enable_web else "OFF") + ")")
     while True:
         q = input("\nQuestion > ").strip()
         if not q:
@@ -236,7 +340,7 @@ def main() -> int:
         if q.lower() in {"exit", "quit", "q"}:
             return 0
 
-        answer, refs = answer_question(q, max_docs=max(1, args.max_docs))
+        answer, refs = answer_question(q, max_docs=max(1, args.max_docs), enable_web_fallback=enable_web)
         print("\n" + "-" * 60)
         print(answer)
         if not args.hide_sources:
