@@ -59,131 +59,477 @@ def get_redacteur():
         return None, None
 
 # ============================================================================
-# Conformité Scoring Logic
+# Advanced Conformité Scoring System
 # ============================================================================
 
-CONFORMITE_CRITERES = [
-    {
-        "id": "capital",
-        "label": "Capital social constitué",
-        "article": "Art. 92-100",
-        "article_source": "Code des Sociétés Commerciales",
-        "thresholds": {"SUARL": 1000, "SARL": 1000, "SA": 5000}
+# Detailed legal requirements database
+LEGAL_REQUIREMENTS = {
+    "startup_act": {
+        "loi": "Loi n° 2018-20 du 17 avril 2018",
+        "titre": "Startup Act",
+        "criteres": {
+            "age_entreprise": {
+                "article": "Art. 3, al. 1",
+                "texte": "Être constituée depuis moins de 8 ans",
+                "poids": 15,
+            },
+            "caractere_innovant": {
+                "article": "Art. 3, al. 2",
+                "texte": "Avoir un modèle économique innovant et un fort potentiel de croissance",
+                "poids": 25,
+                "keywords": ["innovant", "innovation", "technologie", "digital", "ia", "intelligence artificielle", 
+                            "blockchain", "machine learning", "saas", "plateforme", "disruption", "scalable"],
+            },
+            "independance": {
+                "article": "Art. 3, al. 3",
+                "texte": "Ne pas être une filiale ou résulter d'une restructuration",
+                "poids": 10,
+            },
+            "siege_tunisie": {
+                "article": "Art. 3, al. 4",
+                "texte": "Avoir son siège social en Tunisie",
+                "poids": 10,
+            },
+            "capital_detenu": {
+                "article": "Art. 3, al. 5",
+                "texte": "Capital détenu à 2/3 par des personnes physiques ou fonds d'investissement",
+                "poids": 10,
+            },
+        }
     },
-    {
-        "id": "label_startup",
-        "label": "Éligibilité label Startup",
-        "article": "Art. 3",
-        "article_source": "Loi n° 2018-20 (Startup Act)",
+    "societes_commerciales": {
+        "loi": "Code des Sociétés Commerciales",
+        "criteres": {
+            "capital_suarl": {
+                "article": "Art. 148",
+                "texte": "Capital minimum SUARL: 1 000 TND",
+                "seuil": 1000,
+                "type": "SUARL",
+                "poids": 10,
+            },
+            "capital_sarl": {
+                "article": "Art. 92",
+                "texte": "Capital minimum SARL: 1 000 TND",
+                "seuil": 1000,
+                "type": "SARL",
+                "poids": 10,
+            },
+            "capital_sa": {
+                "article": "Art. 160",
+                "texte": "Capital minimum SA: 5 000 TND (sans APE)",
+                "seuil": 5000,
+                "type": "SA",
+                "poids": 10,
+            },
+            "statuts_rediges": {
+                "article": "Art. 96",
+                "texte": "Statuts rédigés par acte authentique ou sous seing privé",
+                "poids": 5,
+            },
+        }
     },
-    {
-        "id": "protection_donnees",
-        "label": "Protection des données",
-        "article": "Art. 7-12",
-        "article_source": "Loi organique n° 2004-63",
+    "protection_donnees": {
+        "loi": "Loi organique n° 2004-63",
+        "criteres": {
+            "declaration_inpdp": {
+                "article": "Art. 7",
+                "texte": "Déclaration préalable auprès de l'INPDP pour tout traitement",
+                "poids": 15,
+                "secteurs_critiques": ["Fintech", "HealthTech", "EdTech", "E-commerce"],
+            },
+            "consentement": {
+                "article": "Art. 27",
+                "texte": "Consentement explicite pour la collecte de données",
+                "poids": 10,
+            },
+            "finalite": {
+                "article": "Art. 9",
+                "texte": "Définir la finalité du traitement des données",
+                "poids": 5,
+            },
+            "securite": {
+                "article": "Art. 19",
+                "texte": "Mesures de sécurité appropriées",
+                "poids": 10,
+            },
+            "droits_personnes": {
+                "article": "Art. 32-38",
+                "texte": "Garantir les droits d'accès, rectification, suppression",
+                "poids": 5,
+            },
+        }
     },
-    {
-        "id": "autorisation_bct",
-        "label": "Autorisation BCT",
-        "article": "Art. 34",
-        "article_source": "Loi n° 2016-48 + Circulaire BCT",
+    "bct_paiement": {
+        "loi": "Loi n° 2016-48 + Circulaire BCT 2020-01",
+        "criteres": {
+            "agrement_etablissement": {
+                "article": "Art. 34",
+                "texte": "Agrément BCT obligatoire pour activité de paiement",
+                "poids": 25,
+                "activites": ["paiement", "transfert", "monnaie électronique", "payment", "wallet", "mobile money"],
+            },
+            "capital_paiement": {
+                "article": "Circ. 2020-01, Art. 5",
+                "texte": "Capital minimum établissement de paiement: 1 000 000 TND",
+                "seuil": 1000000,
+                "poids": 15,
+            },
+            "capital_monnaie_elec": {
+                "article": "Circ. 2020-01, Art. 6",
+                "texte": "Capital minimum monnaie électronique: 2 000 000 TND",
+                "seuil": 2000000,
+                "poids": 15,
+            },
+            "anti_blanchiment": {
+                "article": "Loi 2003-75, Art. 74",
+                "texte": "Dispositif de lutte contre le blanchiment (KYC/AML)",
+                "poids": 20,
+            },
+        }
     },
-    {
-        "id": "cgv_cgu",
-        "label": "Mentions légales CGU/CGV",
-        "article": "Art. 15",
-        "article_source": "Loi n° 2000-83 (commerce électronique)",
+    "commerce_electronique": {
+        "loi": "Loi n° 2000-83",
+        "criteres": {
+            "mentions_legales": {
+                "article": "Art. 9",
+                "texte": "Mentions légales obligatoires sur le site",
+                "poids": 10,
+                "elements": ["raison sociale", "siège", "RCS", "contact", "TVA"],
+            },
+            "conditions_generales": {
+                "article": "Art. 25",
+                "texte": "CGV/CGU accessibles et acceptées avant achat",
+                "poids": 10,
+            },
+            "droit_retractation": {
+                "article": "Art. 30",
+                "texte": "Droit de rétractation de 10 jours (si applicable)",
+                "poids": 10,
+            },
+            "confirmation_commande": {
+                "article": "Art. 28",
+                "texte": "Confirmation écrite de la commande",
+                "poids": 5,
+            },
+        }
     }
-]
+}
+
+# Risk profiles by sector
+SECTOR_RISK_PROFILES = {
+    "Fintech": {
+        "risque_global": "élevé",
+        "lois_applicables": ["startup_act", "societes_commerciales", "protection_donnees", "bct_paiement", "commerce_electronique"],
+        "autorisations_requises": ["Agrément BCT", "Déclaration INPDP"],
+        "capital_recommande": 1000000,
+        "delai_conformite": "6-12 mois",
+    },
+    "HealthTech": {
+        "risque_global": "élevé",
+        "lois_applicables": ["startup_act", "societes_commerciales", "protection_donnees"],
+        "autorisations_requises": ["Autorisation Ministère Santé", "Déclaration INPDP"],
+        "capital_recommande": 50000,
+        "delai_conformite": "3-6 mois",
+    },
+    "EdTech": {
+        "risque_global": "moyen",
+        "lois_applicables": ["startup_act", "societes_commerciales", "protection_donnees", "commerce_electronique"],
+        "autorisations_requises": ["Déclaration INPDP"],
+        "capital_recommande": 10000,
+        "delai_conformite": "1-3 mois",
+    },
+    "E-commerce": {
+        "risque_global": "moyen",
+        "lois_applicables": ["startup_act", "societes_commerciales", "protection_donnees", "commerce_electronique"],
+        "autorisations_requises": ["Déclaration INPDP"],
+        "capital_recommande": 5000,
+        "delai_conformite": "1-2 mois",
+    },
+    "SaaS": {
+        "risque_global": "faible",
+        "lois_applicables": ["startup_act", "societes_commerciales", "protection_donnees", "commerce_electronique"],
+        "autorisations_requises": [],
+        "capital_recommande": 1000,
+        "delai_conformite": "< 1 mois",
+    },
+}
+
+def analyze_text_compliance(text: str, keywords: list) -> tuple[int, list]:
+    """Analyse un texte pour détecter la présence de mots-clés."""
+    text_lower = text.lower()
+    found = [kw for kw in keywords if kw.lower() in text_lower]
+    score = min(100, len(found) * 20) if keywords else 50
+    return score, found
+
+def calculate_capital_score(capital: int | None, seuil: int) -> tuple[int, str]:
+    """Calcule le score basé sur le capital."""
+    if capital is None:
+        return 30, "Capital non spécifié - à définir"
+    if capital >= seuil:
+        return 100, f"✓ Capital de {capital:,} TND ≥ {seuil:,} TND requis"
+    ratio = capital / seuil
+    score = int(ratio * 100)
+    manque = seuil - capital
+    return score, f"Capital insuffisant: {capital:,} TND < {seuil:,} TND (manque {manque:,} TND)"
 
 def analyze_conformite(data):
-    """Analyse la conformité et retourne un score par critère."""
-    criteres_results = []
-    total_score = 0
-    
-    project_description = data.get("project_description", "")
-    sector = data.get("sector", "")
+    """Analyse avancée de la conformité avec détails par critère."""
+    project_description = data.get("project_description", "") or ""
+    sector = data.get("sector", "SaaS") or "SaaS"
     capital = data.get("capital")
-    type_societe = data.get("type_societe", "SUARL")
+    type_societe = data.get("type_societe", "SUARL") or "SUARL"
     
-    for critere in CONFORMITE_CRITERES:
-        score = 0
-        status_val = "x"
-        details = ""
+    # Get sector risk profile
+    risk_profile = SECTOR_RISK_PROFILES.get(sector, SECTOR_RISK_PROFILES["SaaS"])
+    applicable_laws = risk_profile["lois_applicables"]
+    
+    criteres_results = []
+    total_weighted_score = 0
+    total_weight = 0
+    recommendations = []
+    
+    # 1. STARTUP ACT ELIGIBILITY
+    if "startup_act" in applicable_laws:
+        startup_reqs = LEGAL_REQUIREMENTS["startup_act"]["criteres"]
         
-        if critere["id"] == "capital":
-            threshold = critere["thresholds"].get(type_societe, 1000)
-            if capital and capital >= threshold:
-                score = 100
-                status_val = "check"
-                details = f"Capital de {capital} TND ≥ {threshold} TND requis"
-            elif capital:
-                score = int((capital / threshold) * 100)
-                status_val = "warning" if score > 50 else "x"
-                details = f"Capital de {capital} TND < {threshold} TND requis"
-            else:
-                score = 50
-                status_val = "warning"
-                details = "Capital non spécifié"
+        # Innovation check
+        innov_crit = startup_reqs["caractere_innovant"]
+        innov_score, found_keywords = analyze_text_compliance(
+            project_description, 
+            innov_crit["keywords"]
+        )
         
-        elif critere["id"] == "label_startup":
-            desc_lower = project_description.lower()
-            innovation_keywords = ["innovant", "technologie", "ia", "intelligence artificielle", 
-                                   "blockchain", "saas", "plateforme", "app", "mobile", "digital"]
-            matches = sum(1 for kw in innovation_keywords if kw in desc_lower)
-            score = min(100, matches * 20 + 40)
-            status_val = "check" if score >= 70 else "warning" if score >= 40 else "x"
-            details = f"Potentiel d'innovation: {matches} indicateurs détectés"
-        
-        elif critere["id"] == "protection_donnees":
-            high_risk_sectors = ["Fintech", "HealthTech", "EdTech"]
-            if sector in high_risk_sectors:
-                score = 45
-                status_val = "warning"
-                details = f"Secteur {sector}: déclaration INPDP obligatoire"
-            else:
-                score = 70
-                status_val = "check"
-                details = "Obligations standard de protection des données"
-        
-        elif critere["id"] == "autorisation_bct":
-            if sector == "Fintech" or "paiement" in project_description.lower():
-                score = 30
-                status_val = "x"
-                details = "Agrément BCT obligatoire pour activité de paiement"
-            else:
-                score = 100
-                status_val = "check"
-                details = "Pas d'autorisation BCT requise"
-        
-        elif critere["id"] == "cgv_cgu":
-            score = 75
-            status_val = "warning"
-            details = "CGU/CGV à rédiger selon les mentions obligatoires"
+        if innov_score >= 60:
+            status = "check"
+            details = f"Caractère innovant détecté: {', '.join(found_keywords[:3])}"
+        elif innov_score >= 40:
+            status = "warning"
+            details = f"Innovation partielle. Renforcer: IA, blockchain, ou technologie disruptive"
+            recommendations.append("Détailler le caractère innovant de votre solution")
+        else:
+            status = "x"
+            details = "Caractère innovant non démontré dans la description"
+            recommendations.append("Reformuler le projet pour mettre en avant l'innovation technologique")
         
         criteres_results.append({
-            "label": critere["label"],
-            "score": score,
-            "status": status_val,
-            "article": critere["article"],
-            "article_source": critere["article_source"],
-            "details": details
+            "label": "Éligibilité Label Startup",
+            "score": innov_score,
+            "status": status,
+            "article": innov_crit["article"],
+            "article_source": f"{LEGAL_REQUIREMENTS['startup_act']['loi']} - {LEGAL_REQUIREMENTS['startup_act']['titre']}",
+            "details": details,
+            "category": "Startup Act",
+            "recommendation": "Soumettre dossier au Startup Act pour avantages fiscaux" if innov_score >= 60 else None,
         })
-        total_score += score
+        total_weighted_score += innov_score * innov_crit["poids"]
+        total_weight += innov_crit["poids"]
     
-    score_global = total_score // len(CONFORMITE_CRITERES)
+    # 2. CAPITAL REQUIREMENTS
+    societe_reqs = LEGAL_REQUIREMENTS["societes_commerciales"]["criteres"]
+    capital_key = f"capital_{type_societe.lower()}"
+    if capital_key in societe_reqs:
+        cap_crit = societe_reqs[capital_key]
+        cap_score, cap_details = calculate_capital_score(capital, cap_crit["seuil"])
+        
+        status = "check" if cap_score == 100 else "warning" if cap_score >= 50 else "x"
+        
+        criteres_results.append({
+            "label": f"Capital social ({type_societe})",
+            "score": cap_score,
+            "status": status,
+            "article": cap_crit["article"],
+            "article_source": LEGAL_REQUIREMENTS["societes_commerciales"]["loi"],
+            "details": cap_details,
+            "category": "Forme juridique",
+            "recommendation": None if cap_score == 100 else f"Augmenter le capital à {cap_crit['seuil']:,} TND minimum",
+        })
+        total_weighted_score += cap_score * cap_crit["poids"]
+        total_weight += cap_crit["poids"]
     
-    if score_global >= 80:
+    # 3. BCT AUTHORIZATION (Fintech specific)
+    if sector == "Fintech" or "bct_paiement" in applicable_laws:
+        bct_reqs = LEGAL_REQUIREMENTS["bct_paiement"]["criteres"]
+        agr_crit = bct_reqs["agrement_etablissement"]
+        
+        # Check if payment activity detected
+        payment_score, found_activities = analyze_text_compliance(
+            project_description,
+            agr_crit["activites"]
+        )
+        
+        if found_activities:
+            # Payment activity detected - BCT required
+            cap_paiement = bct_reqs["capital_paiement"]
+            cap_score, cap_details = calculate_capital_score(capital, cap_paiement["seuil"])
+            
+            criteres_results.append({
+                "label": "Agrément BCT (Paiement)",
+                "score": 20,  # Low score because authorization needed
+                "status": "x",
+                "article": agr_crit["article"],
+                "article_source": LEGAL_REQUIREMENTS["bct_paiement"]["loi"],
+                "details": f"Activité de paiement détectée ({', '.join(found_activities)}). Agrément BCT OBLIGATOIRE.",
+                "category": "Réglementation BCT",
+                "recommendation": "Déposer demande d'agrément auprès de la BCT (délai: 3-6 mois)",
+            })
+            total_weighted_score += 20 * agr_crit["poids"]
+            total_weight += agr_crit["poids"]
+            
+            criteres_results.append({
+                "label": "Capital établissement paiement",
+                "score": cap_score,
+                "status": "check" if cap_score == 100 else "x",
+                "article": cap_paiement["article"],
+                "article_source": LEGAL_REQUIREMENTS["bct_paiement"]["loi"],
+                "details": cap_details,
+                "category": "Réglementation BCT",
+                "recommendation": None if cap_score == 100 else "Capital de 1 000 000 TND requis pour établissement de paiement",
+            })
+            total_weighted_score += cap_score * cap_paiement["poids"]
+            total_weight += cap_paiement["poids"]
+            
+            # AML/KYC requirement
+            aml_crit = bct_reqs["anti_blanchiment"]
+            criteres_results.append({
+                "label": "Dispositif KYC/AML",
+                "score": 40,
+                "status": "warning",
+                "article": aml_crit["article"],
+                "article_source": "Loi 2003-75 (Anti-blanchiment)",
+                "details": "Dispositif de vérification d'identité et lutte anti-blanchiment requis",
+                "category": "Réglementation BCT",
+                "recommendation": "Implémenter KYC (vérification identité) + monitoring des transactions",
+            })
+            total_weighted_score += 40 * aml_crit["poids"]
+            total_weight += aml_crit["poids"]
+        else:
+            criteres_results.append({
+                "label": "Agrément BCT",
+                "score": 100,
+                "status": "check",
+                "article": agr_crit["article"],
+                "article_source": LEGAL_REQUIREMENTS["bct_paiement"]["loi"],
+                "details": "Pas d'activité de paiement détectée - agrément BCT non requis",
+                "category": "Réglementation BCT",
+                "recommendation": None,
+            })
+            total_weighted_score += 100 * 10
+            total_weight += 10
+    
+    # 4. DATA PROTECTION
+    if "protection_donnees" in applicable_laws:
+        data_reqs = LEGAL_REQUIREMENTS["protection_donnees"]["criteres"]
+        inpdp_crit = data_reqs["declaration_inpdp"]
+        
+        is_critical = sector in inpdp_crit["secteurs_critiques"]
+        data_keywords = ["données", "data", "utilisateur", "client", "personnel", "information"]
+        data_score, found_data = analyze_text_compliance(project_description, data_keywords)
+        
+        if is_critical or found_data:
+            score = 35 if is_critical else 60
+            status = "warning" if is_critical else "warning"
+            details = f"Secteur {sector}: déclaration INPDP obligatoire avant mise en production" if is_critical else "Traitement de données détecté - déclaration INPDP recommandée"
+            
+            criteres_results.append({
+                "label": "Déclaration INPDP",
+                "score": score,
+                "status": status,
+                "article": inpdp_crit["article"],
+                "article_source": LEGAL_REQUIREMENTS["protection_donnees"]["loi"],
+                "details": details,
+                "category": "Protection des données",
+                "recommendation": "Effectuer déclaration sur https://www.inpdp.tn (gratuit, ~2 semaines)",
+            })
+            total_weighted_score += score * inpdp_crit["poids"]
+            total_weight += inpdp_crit["poids"]
+            
+            # Consent requirement
+            consent_crit = data_reqs["consentement"]
+            criteres_results.append({
+                "label": "Consentement utilisateurs",
+                "score": 50,
+                "status": "warning",
+                "article": consent_crit["article"],
+                "article_source": LEGAL_REQUIREMENTS["protection_donnees"]["loi"],
+                "details": "Mécanisme de consentement explicite requis pour collecte de données",
+                "category": "Protection des données",
+                "recommendation": "Ajouter case à cocher + politique de confidentialité",
+            })
+            total_weighted_score += 50 * consent_crit["poids"]
+            total_weight += consent_crit["poids"]
+        else:
+            criteres_results.append({
+                "label": "Protection des données",
+                "score": 80,
+                "status": "check",
+                "article": inpdp_crit["article"],
+                "article_source": LEGAL_REQUIREMENTS["protection_donnees"]["loi"],
+                "details": "Obligations standard - déclaration INPDP recommandée par précaution",
+                "category": "Protection des données",
+                "recommendation": None,
+            })
+            total_weighted_score += 80 * inpdp_crit["poids"]
+            total_weight += inpdp_crit["poids"]
+    
+    # 5. E-COMMERCE REQUIREMENTS
+    if "commerce_electronique" in applicable_laws:
+        ecom_reqs = LEGAL_REQUIREMENTS["commerce_electronique"]["criteres"]
+        
+        mentions_crit = ecom_reqs["mentions_legales"]
+        cgv_crit = ecom_reqs["conditions_generales"]
+        
+        criteres_results.append({
+            "label": "Mentions légales site web",
+            "score": 60,
+            "status": "warning",
+            "article": mentions_crit["article"],
+            "article_source": LEGAL_REQUIREMENTS["commerce_electronique"]["loi"],
+            "details": f"Requis: {', '.join(mentions_crit['elements'])}",
+            "category": "Commerce électronique",
+            "recommendation": "Créer page 'Mentions légales' avec toutes les informations requises",
+        })
+        total_weighted_score += 60 * mentions_crit["poids"]
+        total_weight += mentions_crit["poids"]
+        
+        criteres_results.append({
+            "label": "CGU/CGV",
+            "score": 55,
+            "status": "warning",
+            "article": cgv_crit["article"],
+            "article_source": LEGAL_REQUIREMENTS["commerce_electronique"]["loi"],
+            "details": "Conditions générales obligatoires et acceptées avant transaction",
+            "category": "Commerce électronique",
+            "recommendation": "Rédiger CGU/CGV conformes (utiliser AgentRédacteur)",
+        })
+        total_weighted_score += 55 * cgv_crit["poids"]
+        total_weight += cgv_crit["poids"]
+    
+    # Calculate final score
+    score_global = int(total_weighted_score / total_weight) if total_weight > 0 else 50
+    
+    # Determine status
+    if score_global >= 75:
         status_global = "conforme"
     elif score_global >= 50:
         status_global = "conforme_reserves"
     else:
         status_global = "non_conforme"
     
+    # Build recommendations summary
+    all_recommendations = [c["recommendation"] for c in criteres_results if c.get("recommendation")]
+    
     return {
         "score_global": score_global,
         "status": status_global,
-        "criteres": criteres_results
+        "criteres": criteres_results,
+        "risk_profile": {
+            "niveau": risk_profile["risque_global"],
+            "autorisations_requises": risk_profile["autorisations_requises"],
+            "capital_recommande": risk_profile["capital_recommande"],
+            "delai_conformite": risk_profile["delai_conformite"],
+        },
+        "recommendations": all_recommendations[:5],  # Top 5 recommendations
+        "lois_applicables": [LEGAL_REQUIREMENTS[l]["loi"] for l in applicable_laws if l in LEGAL_REQUIREMENTS],
     }
 
 # ============================================================================

@@ -31,12 +31,24 @@ class ConformiteCritereSerializer(serializers.Serializer):
     article = serializers.CharField()
     article_source = serializers.CharField()
     details = serializers.CharField()
+    category = serializers.CharField(required=False, default="")
+    recommendation = serializers.CharField(required=False, allow_null=True, default=None)
+
+
+class RiskProfileSerializer(serializers.Serializer):
+    niveau = serializers.CharField()
+    autorisations_requises = serializers.ListField(child=serializers.CharField())
+    capital_recommande = serializers.IntegerField()
+    delai_conformite = serializers.CharField()
 
 
 class ConformiteResponseSerializer(serializers.Serializer):
     score_global = serializers.IntegerField()
     status = serializers.CharField()
     criteres = ConformiteCritereSerializer(many=True)
+    risk_profile = RiskProfileSerializer(required=False)
+    recommendations = serializers.ListField(child=serializers.CharField(), required=False)
+    lois_applicables = serializers.ListField(child=serializers.CharField(), required=False)
 
 
 class DocumentRequestSerializer(serializers.Serializer):
