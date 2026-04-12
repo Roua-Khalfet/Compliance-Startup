@@ -216,11 +216,12 @@ def extract_failed_pages(errors: list | None) -> list[int]:
 
 def fallback_extract_pdf_pages(
     file_path: str | Path,
-    pages: list[int],
+    pages: list[int] | None = None,
 ) -> list[tuple[int, str]]:
     """
     Extrait le texte brut des pages spécifiées (1-indexed) via pypdf.
-    Utilisé en fallback quand le parsing principal échoue sur certaines pages.
+    Si pages est None, tente toutes les pages du PDF.
+    Utilisé en fallback quand le parsing principal échoue partiellement ou totalement.
     """
     from pypdf import PdfReader
 
@@ -232,6 +233,9 @@ def fallback_extract_pdf_pages(
     total_pages = len(reader.pages)
 
     results: list[tuple[int, str]] = []
+    if pages is None:
+        pages = list(range(1, total_pages + 1))
+
     for page_num in pages:
         idx = page_num - 1
         if idx < 0 or idx >= total_pages:

@@ -4,9 +4,17 @@ import json
 import logging
 import traceback
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Project paths (independent from current working directory)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_DIR = PROJECT_ROOT / "backend"
+
+# Load .env from project root for consistent local runs
+load_dotenv(PROJECT_ROOT / ".env")
 
 # Django bootstrap
-sys.path.insert(0, str(Path("backend").resolve()))
+sys.path.insert(0, str(BACKEND_DIR))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
@@ -49,8 +57,11 @@ def _looks_like_inference_error(text: str) -> bool:
     ]
     return any(p in msg for p in patterns)
 
-root = Path.cwd()
-pdf_path = root / "complianceguard" / "test.pdf"
+pdf_candidates = [
+    PROJECT_ROOT / "Data" / "test.pdf",
+    PROJECT_ROOT / "complianceguard" / "test.pdf",
+]
+pdf_path = next((p for p in pdf_candidates if p.exists()), pdf_candidates[0])
 
 print("=" * 70)
 print("CRAG DEMO RUN - NOTEBOOK MODE (UPLOAD ONLY)")

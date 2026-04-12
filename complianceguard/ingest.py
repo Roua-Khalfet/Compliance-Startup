@@ -412,8 +412,48 @@ def fast_ingest_file(file_path: str | Path) -> dict:
         except Exception as exc:
             print(f"[warn] fallback pypdf impossible pour {file_path.name}: {exc}")
 
+    # 3.bis Si aucun chunk n'a pu être produit, on tente un fallback complet
+    # sur toutes les pages PDF pour éviter les faux positifs "ingesté (0 chunk)".
+    if not docs and file_path.suffix.lower() == ".pdf":
+        try:
+            fallback_pages = fallback_extract_pdf_pages(file_path, pages=None)
+            fallback_index = 0
+            for page_num, page_text in fallback_pages:
+                for piece in split_semantic_chunks(page_text, max_chars=ARTICLE_MAX_CHARS, overlap=300):
+                    content = str(piece.get("content", "")).strip()
+                    if not content:
+                        continue
+
+                    seed = f"user_full_fallback_{file_path.name}:{page_num}:{fallback_index}:{content[:80]}"
+                    chunk_id = str(uuid.uuid5(uuid.NAMESPACE_URL, seed))
+                    docs.append(
+                        Document(
+                            page_content=content,
+                            metadata={
+                                "id": chunk_id,
+                                "chunk_id": chunk_id,
+                                "chunk_index": fallback_index,
+                                "source_file": file_path.name,
+                                "doc_type": "user_upload",
+                                "fallback_page": page_num,
+                                "chunk_type": str(piece.get("chunk_type", "preambule") or "preambule"),
+                                "text": content,
+                            },
+                        )
+                    )
+                    fallback_index += 1
+        except Exception as exc:
+            print(f"[warn] fallback complet pypdf impossible pour {file_path.name}: {exc}")
+
     if not docs:
-        return {"status": "error", "message": "No text extracted."}
+        return {
+            "status": "error",
+            "message": (
+                "Aucun texte exploitable n'a été extrait du document. "
+                "Le PDF est peut-être scanné/image ou protégé. "
+                "Essayez un PDF avec couche texte (OCR) puis réessayez."
+            ),
+        }
 
     # 4. Embeddings + upsert Qdrant
     embeddings = get_ollama_embeddings()

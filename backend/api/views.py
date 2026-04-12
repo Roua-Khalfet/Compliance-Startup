@@ -722,6 +722,11 @@ def upload_document(request):
         os.rename(temp_path, target_path)
         result = fast_ingest_file(target_path)
         os.unlink(target_path)
+        if result.get("status") != "success" or int(result.get("chunks_indexed") or 0) <= 0:
+            return Response(
+                {"error": result.get("message", "Ingestion failed")},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
         return Response(result)
     except Exception as e:
         if os.path.exists(target_path):
