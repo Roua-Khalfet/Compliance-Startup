@@ -192,7 +192,8 @@ Synthèse vocale du pitch projet pour une présentation orale du résultat.
 
 ## 💡 Exemple de prompt
 
-> *Je souhaite ouvrir une salle de sport moderne dans le Grand Tunis, dans le secteur du fitness et du bien-être physique. Ma cible principale sont les jeunes de 18-35 ans et les actifs qui cherchent un accompagnement sérieux. Je propose des abonnements mensuels entre 80 et 150 TND incluant du coaching personnalisé et des cours collectifs variés...*
+Je souhaite ouvrir une salle de sport moderne dans le Grand Tunis, dans le secteur du fitness et du bien-être physique. Ma cible principale sont les jeunes de 18-35 ans et les actifs qui cherchent un accompagnement sérieux. Je propose des abonnements mensuels entre 80 et 150 TND incluant du coaching personnalisé et des cours collectifs variés. Le problème que je résous est le manque de motivation et d'accompagnement personnalisé dans les salles de sport classiques de Tunis. Mon différenciateur principal est la combinaison d'un suivi digital via application mobile avec un coaching sur mesure, des cours variés et une expérience client premium — ce que très peu de salles proposent actuellement dans le Grand Tunis. Nous sommes en phase d'idée avec un budget de démarrage de 200 000 TND. Le modèle économique repose sur des abonnements mensuels et des packages coaching. Notre zone de chalandise cible les quartiers de Tunis comme La Marsa, Les Berges du Lac, Ariana et El Menzah où le pouvoir d'achat est plus élevé et la demande en fitness est forte.
+
 
 ---
 
